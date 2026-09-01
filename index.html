@@ -37,6 +37,17 @@
     .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Hide the up/down spinner arrows on number inputs (amount, budget, etc.) */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
   </style>
 
   <!-- PWA Setup -->
@@ -275,8 +286,8 @@
         }
       };
 
-      const handleQuickAdd = (categoryId, store = '', startWithFreeWord = false) => {
-        setQuickAddData({ categoryId, store, startWithFreeWord });
+      const handleQuickAdd = (categoryId, startWithFreeWord = false) => {
+        setQuickAddData({ categoryId, startWithFreeWord });
         setActiveTab('add');
       };
 
@@ -347,25 +358,17 @@
                    setCategories={setCategories}
                    cards={cards}
                    setCards={setCards}
+                   setNotifiedLevels={setNotifiedLevels}
+                   setNotificationHistory={setNotificationHistory}
                    onShowToast={(msg) => setToastMessage(msg)}
                  />
               )}
             </div>
 
             <nav className="fixed bottom-0 w-full max-w-md bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 z-40 pb-safe">
-              <div className="flex justify-evenly items-center h-[72px] px-2 gap-1">
+              <div className="flex justify-evenly items-center h-[64px] px-2 gap-1">
                 <NavItem iconClass="ph ph-house" label="ホーム" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
                 <NavItem iconClass="ph ph-list" label="明細" isActive={activeTab === 'list'} onClick={() => setActiveTab('list')} />
-                
-                <div className="relative -top-6 shrink-0 px-2">
-                  <button 
-                    onClick={() => { setEditingTransaction(null); setQuickAddData(null); setActiveTab('add'); }}
-                    className="w-[64px] h-[64px] bg-blue-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-blue-500/40 transform transition active:scale-95 hover:bg-blue-700"
-                  >
-                    <i className="ph-fill ph-plus-circle text-[32px]"></i>
-                  </button>
-                </div>
-
                 <NavItem iconClass="ph ph-chart-pie" label="集計" isActive={activeTab === 'stats'} onClick={() => setActiveTab('stats')} />
                 <NavItem iconClass="ph ph-gear" label="設定" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
               </div>
@@ -398,9 +401,11 @@
       const budgetPercent = Math.min(100, (total / settings.budget) * 100);
       const remainingBudget = settings.budget - total;
       
-      const prevMonthDate = new Date();
-      prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
-      const prevMonthKey = getMonthKey(prevMonthDate.toISOString());
+      const now = new Date();
+      let prevMonthIndex = now.getMonth() - 1;
+      let prevMonthYear = now.getFullYear();
+      if (prevMonthIndex < 0) { prevMonthIndex = 11; prevMonthYear -= 1; }
+      const prevMonthKey = `${prevMonthYear}-${String(prevMonthIndex + 1).padStart(2, '0')}`;
       const prevMonthTotal = allTransactions
         .filter(t => getMonthKey(t.date) === prevMonthKey)
         .reduce((sum, t) => sum + Number(t.amount), 0);
@@ -492,10 +497,10 @@
 
           <div>
             <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 px-1">クイック登録</h3>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="flex overflow-x-auto hide-scrollbar space-x-2 pb-1 -mx-4 px-4 snap-x snap-mandatory">
               <button
-                onClick={() => onQuickAdd(categories[0]?.id || null, '', true)}
-                className="bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center space-y-1 active:bg-slate-50 dark:active:bg-slate-700 transition"
+                onClick={() => onQuickAdd(categories[0]?.id || null, true)}
+                className="shrink-0 snap-start w-[76px] bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center space-y-1 active:bg-slate-50 dark:active:bg-slate-700 transition"
               >
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800">
                   <i className="ph ph-plus text-base"></i>
@@ -503,11 +508,11 @@
                 <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate w-full text-center">フリー入力</span>
               </button>
 
-              {categories.slice(0, 3).map(cat => (
+              {categories.map(cat => (
                  <button
                    key={cat.id}
                    onClick={() => onQuickAdd(cat.id)}
-                   className="bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center space-y-1 active:bg-slate-50 dark:active:bg-slate-700 transition"
+                   className="shrink-0 snap-start w-[76px] bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center space-y-1 active:bg-slate-50 dark:active:bg-slate-700 transition"
                  >
                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: cat.color }}>
                       {cat.name.substring(0, 1)}
@@ -537,8 +542,8 @@
                         <i className="ph ph-credit-card text-[18px]"></i>
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{t.store || cat.name}</p>
-                        <p className="text-xs text-slate-400">{t.date.split('-')[1]}/{t.date.split('-')[2]} • {cat.name}</p>
+                        <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{cat.name}</p>
+                        <p className="text-xs text-slate-400">{t.date.split('-')[1]}/{t.date.split('-')[2]}</p>
                       </div>
                     </div>
                     <div className="font-bold text-lg text-slate-800 dark:text-white">
@@ -549,7 +554,7 @@
               })}
               {transactions.length === 0 && (
                 <div className="text-center py-8 text-slate-400 text-sm bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
-                  まだ今月の利用記録がありません。<br/>下部の「＋」から追加してください。
+                  まだ今月の利用記録がありません。<br/>上の「クイック登録」から追加してください。
                 </div>
               )}
             </div>
@@ -685,16 +690,12 @@
                               {cat.name.substring(0, 1)}
                             </div>
                             <div className="truncate">
-                              <p className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">{t.store || cat.name}</p>
-                              <div className="flex items-center text-[10px] text-slate-400 mt-0.5 space-x-2">
-                                <span>{cat.name}</span>
-                                {cards.length > 1 && (
-                                  <>
-                                    <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-                                    <span className="truncate">{card.name}</span>
-                                  </>
-                                )}
-                              </div>
+                              <p className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">{cat.name}</p>
+                              {cards.length > 1 && (
+                                <div className="flex items-center text-[10px] text-slate-400 mt-0.5">
+                                  <span className="truncate">{card.name}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="font-bold text-lg text-slate-800 dark:text-white pl-2 shrink-0">
@@ -715,7 +716,6 @@
     const AddScreen = ({ onSave, onCancel, categories, cards, initialData, onDelete, onAddCategory }) => {
       const [amount, setAmount] = useState(initialData?.amount?.toString() || '');
       const [date, setDate] = useState(initialData?.date || todayString());
-      const [store, setStore] = useState(initialData?.store || '');
       const [categoryId, setCategoryId] = useState(initialData?.categoryId || categories[0]?.id);
       const [cardId, setCardId] = useState(initialData?.cardId || cards[0]?.id);
       const [memo, setMemo] = useState(initialData?.memo || '');
@@ -750,7 +750,6 @@
         onSave({
           amount: Number(amount),
           date,
-          store,
           categoryId,
           cardId,
           memo
@@ -856,17 +855,6 @@
               <div className="space-y-4">
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden divide-y divide-slate-100 dark:divide-slate-700">
                   
-                  <div className="flex items-center p-4">
-                    <label className="w-20 text-sm font-bold text-slate-500 dark:text-slate-400">店名</label>
-                    <input 
-                      type="text" 
-                      value={store}
-                      onChange={e => setStore(e.target.value)}
-                      placeholder="未入力の場合はカテゴリ名"
-                      className="flex-1 bg-transparent text-sm font-medium text-slate-800 dark:text-white focus:outline-none placeholder-slate-300"
-                    />
-                  </div>
-
                   <div className="flex items-center p-4">
                     <label className="w-20 text-sm font-bold text-slate-500 dark:text-slate-400">日付</label>
                     <input 
@@ -1173,7 +1161,8 @@
 
     const SettingsScreen = ({ 
       settings, setSettings, notificationHistory, 
-      transactions, setTransactions, categories, setCategories, cards, setCards, onShowToast 
+      transactions, setTransactions, categories, setCategories, cards, setCards, 
+      setNotifiedLevels, setNotificationHistory, onShowToast 
     }) => {
       const fileInputRef = useRef(null);
       
@@ -1187,7 +1176,7 @@
           return stringified;
         };
 
-        const headers = ['ID', '日付', '金額', '店名', 'カテゴリ', 'カード', 'メモ'];
+        const headers = ['ID', '日付', '金額', 'カテゴリ', 'カード', 'メモ'];
         
         const rows = transactions.map(t => {
           const categoryName = categories.find(c => c.id === t.categoryId)?.name || '不明なカテゴリ';
@@ -1197,7 +1186,6 @@
             escapeCsv(t.id),
             escapeCsv(t.date),
             escapeCsv(t.amount),
-            escapeCsv(t.store),
             escapeCsv(categoryName),
             escapeCsv(cardName),
             escapeCsv(t.memo)
@@ -1274,8 +1262,16 @@
             let updateCount = 0;
 
             parsedRows.forEach(row => {
-              if (row.length < 7) return;
-              const [id, date, amountStr, store, categoryName, cardName, memo] = row;
+              // Supports both the current 6-column format (ID,日付,金額,カテゴリ,カード,メモ)
+              // and the older 7-column format that included a 店名 column (ignored on import).
+              let id, date, amountStr, categoryName, cardName, memo;
+              if (row.length >= 7) {
+                [id, date, amountStr, , categoryName, cardName, memo] = row;
+              } else if (row.length >= 6) {
+                [id, date, amountStr, categoryName, cardName, memo] = row;
+              } else {
+                return;
+              }
               
               const amount = Number(amountStr);
               if (isNaN(amount) || amount <= 0) return;
@@ -1297,7 +1293,6 @@
                 id: id || generateId(),
                 date,
                 amount,
-                store,
                 categoryId: cat.id,
                 cardId: card.id,
                 memo
@@ -1333,6 +1328,8 @@
       const clearAllData = () => {
         if(window.confirm('すべての記録が削除されます。本当によろしいですか？（元に戻せません）')){
           setTransactions([]);
+          setNotifiedLevels({});
+          setNotificationHistory([]);
           alert('すべてのデータを削除しました。');
         }
       }
