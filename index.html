@@ -256,7 +256,6 @@
         }
       }, [currentMonthTotal, isLoaded, settings.enableNotification, settings.notificationUnit, currentMonthKey]);
 
-
       const saveTransaction = (data) => {
         if (editingTransaction) {
           setTransactions(transactions.map(t => t.id === editingTransaction.id ? { ...data, id: editingTransaction.id } : t));
@@ -353,16 +352,16 @@
             </div>
 
             <nav className="fixed bottom-0 w-full max-w-md bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 z-40 pb-safe">
-              <div className="flex justify-around items-center h-16 px-2">
+              <div className="flex justify-evenly items-center h-[72px] px-2 gap-1">
                 <NavItem iconClass="ph ph-house" label="ホーム" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
                 <NavItem iconClass="ph ph-list" label="明細" isActive={activeTab === 'list'} onClick={() => setActiveTab('list')} />
                 
-                <div className="relative -top-5">
+                <div className="relative -top-6 shrink-0 px-2">
                   <button 
                     onClick={() => { setEditingTransaction(null); setQuickAddData(null); setActiveTab('add'); }}
-                    className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 transform transition active:scale-95 hover:bg-blue-700"
+                    className="w-[64px] h-[64px] bg-blue-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-blue-500/40 transform transition active:scale-95 hover:bg-blue-700"
                   >
-                    <i className="ph-fill ph-plus-circle text-[28px]"></i>
+                    <i className="ph-fill ph-plus-circle text-[32px]"></i>
                   </button>
                 </div>
 
@@ -380,12 +379,12 @@
     const NavItem = ({ iconClass, label, isActive, onClick }) => (
       <button 
         onClick={onClick} 
-        className={`flex flex-col items-center justify-center w-16 h-full transition-colors ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+        className={`flex flex-col items-center justify-center w-full h-full transition-colors active:bg-slate-100/50 dark:active:bg-slate-800/50 rounded-xl ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
       >
-        <div className={`mb-1 transition-transform text-[20px] ${isActive ? 'scale-110 font-bold' : 'scale-100'}`}>
+        <div className={`mb-1 transition-transform text-[24px] ${isActive ? 'scale-110 font-bold' : 'scale-100'}`}>
           <i className={iconClass}></i>
         </div>
-        <span className="text-[10px] font-medium">{label}</span>
+        <span className="text-[10px] font-medium mt-0.5">{label}</span>
       </button>
     );
 
@@ -1142,12 +1141,14 @@
               <div className="mt-4 bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                  <div className="h-48 flex items-end justify-between space-x-1 pb-2 border-b border-slate-100 dark:border-slate-700">
                     {yearlyData.map(d => (
-                      <div key={d.month} className="flex flex-col items-center flex-1 group">
-                         <div 
-                           className="w-full bg-blue-500 rounded-t-sm transition-all duration-500 min-h-[4px]"
-                           style={{ height: `${d.heightPercent}%` }}
-                         ></div>
-                         <span className="text-[10px] text-slate-400 mt-2">{d.month}月</span>
+                      <div key={d.month} className="flex flex-col items-center flex-1 group h-full pt-2">
+                         <div className="w-full flex-1 flex items-end">
+                           <div 
+                             className="w-full bg-blue-500 rounded-t-sm transition-all duration-500 min-h-[4px]"
+                             style={{ height: `${d.heightPercent}%` }}
+                           ></div>
+                         </div>
+                         <span className="text-[10px] text-slate-400 mt-2 shrink-0">{d.month}月</span>
                       </div>
                     ))}
                  </div>
