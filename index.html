@@ -228,7 +228,23 @@
         };
 
         load('transactions', setTransactions, []);
-        load('categories', setCategories, DEFAULT_CATEGORIES);
+
+        // カテゴリは保存済みの内容を優先しつつ、DEFAULT_CATEGORIES に
+        // 後から追加した項目（例: 外食）を id 基準でマージして取り込む
+        const storedCategories = localStorage.getItem('cardApp_categories');
+        if (storedCategories) {
+          try {
+            const parsed = JSON.parse(storedCategories);
+            const existingIds = new Set(parsed.map(c => c.id));
+            const merged = [...parsed];
+            DEFAULT_CATEGORIES.forEach((def, idx) => {
+              if (!existingIds.has(def.id)) merged.splice(Math.min(idx, merged.length), 0, def);
+            });
+            setCategories(merged);
+          } catch (e) { setCategories(DEFAULT_CATEGORIES); }
+        } else {
+          setCategories(DEFAULT_CATEGORIES);
+        }
         load('cards', setCards, DEFAULT_CARDS);
         load('settings', setSettings, DEFAULT_SETTINGS);
         load('notifiedLevels', setNotifiedLevels, {});
